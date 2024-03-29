@@ -2,6 +2,8 @@ import pygame
 import random
 import sys
 import os
+import logging
+import argparse
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
@@ -94,17 +96,15 @@ class Snake:
 
 class Food:
     def __init__(self):
-        self.position = [0, 0]  # Initialize position
+        self.position = [0, 0]  
         self.is_food_on_screen = False
 
     def spawn_food(self):
         if not self.is_food_on_screen:
-            # Define areas to avoid (near score and timer)
-            score_area = (SCREEN_WIDTH - 200, 0, 200, 50)  # Area around score (top right)
-            timer_area = (0, 0, 200, 50)  # Area around timer (top left)
+            score_area = (SCREEN_WIDTH - 200, 0, 200, 50) 
+            timer_area = (0, 0, 200, 50)  
             avoid_areas = [score_area, timer_area]
 
-            # Generate random position until it's not in an avoid area
             while True:
                 x = random.randrange(1, (SCREEN_WIDTH // 10)) * 10
                 y = random.randrange(1, (SCREEN_HEIGHT // 10)) * 10
@@ -147,7 +147,7 @@ def main(clock, FPS):
     play_background_music()
 
     power_up_spawned = False
-    power_up_position = [0, 0]  # Initialize power-up position
+    power_up_position = [150, 100]  
 
     start_time = pygame.time.get_ticks()
 
@@ -174,7 +174,6 @@ def main(clock, FPS):
                 elif event.key == pygame.K_DOWN:
                     snake.change_direction_to("DOWN")
         
-        # Power-up spawning logic
         if not power_up_spawned:
             power_up_position = [
                 random.randrange(1, (SCREEN_WIDTH // 10)) * 10,
@@ -182,10 +181,7 @@ def main(clock, FPS):
             ]
             power_up_spawned = True
 
-        # Draw everything
-        screen.fill((0, 0, 0))  # Clear screen
-        
-        # Draw power-up
+        screen.fill((0, 0, 0)) 
         screen.blit(powerup_image, power_up_position)
 
         food_pos = food.spawn_food()
@@ -251,6 +247,16 @@ def main(clock, FPS):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Snake CTF game with debug mode")
+    parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode")
+    args = parser.parse_args()
+
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
+        logging.debug("Debug mode is enabled.")
+    else:
+        logging.basicConfig(level=logging.INFO)
+
     game_over = False
     clock = pygame.time.Clock()
     FPS = 20
