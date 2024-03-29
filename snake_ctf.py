@@ -2,8 +2,6 @@ import pygame
 import random
 import sys
 import os
-import logging
-import argparse
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
@@ -27,6 +25,8 @@ fruit = pygame.image.load(os.path.join(ASSETS_DIR, "burger.png"))
 fruit = pygame.transform.scale(fruit, (30, 30))
 powerup_image = pygame.image.load(os.path.join(ASSETS_DIR, "milkshake.png"))
 powerup_image = pygame.transform.scale(powerup_image, (30, 30))
+start_menu_image = pygame.image.load(os.path.join(ASSETS_DIR, "snake.png"))
+start_menu_image = pygame.transform.scale(start_menu_image, (300, 300))
 
 pygame.mixer.music.load(BACKGROUND_MUSIC_PATH)
 fruit_eaten_sound = pygame.mixer.Sound(FRUIT_EATEN_SOUND_PATH)
@@ -96,15 +96,17 @@ class Snake:
 
 class Food:
     def __init__(self):
-        self.position = [0, 0]  
+        self.position = [0, 0]  # Initialize position
         self.is_food_on_screen = False
 
     def spawn_food(self):
         if not self.is_food_on_screen:
-            score_area = (SCREEN_WIDTH - 200, 0, 200, 50) 
-            timer_area = (0, 0, 200, 50)  
+            # Define areas to avoid (near score and timer)
+            score_area = (SCREEN_WIDTH - 200, 0, 200, 50)  # Area around score (top right)
+            timer_area = (0, 0, 200, 50)  # Area around timer (top left)
             avoid_areas = [score_area, timer_area]
 
+            # Generate random position until it's not in an avoid area
             while True:
                 x = random.randrange(1, (SCREEN_WIDTH // 10)) * 10
                 y = random.randrange(1, (SCREEN_HEIGHT // 10)) * 10
@@ -147,10 +149,35 @@ def main(clock, FPS):
     play_background_music()
 
     power_up_spawned = False
-    power_up_position = [150, 100]  
+    power_up_position = [0, 0]  # Initialize power-up position
 
     start_time = pygame.time.get_ticks()
 
+    # Display start menu
+    screen.fill((0, 0, 0))
+    screen.blit(start_menu_image, ((SCREEN_WIDTH - start_menu_image.get_width()) // 2, 150))
+    game_title_text = large_font.render("Snake CTF", True, (255, 255, 255))
+    screen.blit(
+        game_title_text, ((SCREEN_WIDTH - game_title_text.get_width()) // 2, 50)
+    )
+    instruction_text = font.render(
+        "Press Space Bar to Play", True, (255, 255, 255)
+    )
+    screen.blit(
+        instruction_text,
+        ((SCREEN_WIDTH - instruction_text.get_width()) // 2, 450),
+    )
+    pygame.display.flip()
+
+    # Wait for space bar press to start the game
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    waiting = False
+
+    # Main game loop
     while True:
         clock.tick(FPS)
         for event in pygame.event.get():
@@ -174,6 +201,7 @@ def main(clock, FPS):
                 elif event.key == pygame.K_DOWN:
                     snake.change_direction_to("DOWN")
         
+        # Power-up spawning logic
         if not power_up_spawned:
             power_up_position = [
                 random.randrange(1, (SCREEN_WIDTH // 10)) * 10,
@@ -181,7 +209,10 @@ def main(clock, FPS):
             ]
             power_up_spawned = True
 
-        screen.fill((0, 0, 0)) 
+        # Draw everything
+        screen.fill((0, 0, 0))  # Clear screen
+        
+        # Draw power-up
         screen.blit(powerup_image, power_up_position)
 
         food_pos = food.spawn_food()
@@ -234,6 +265,17 @@ def main(clock, FPS):
 
             display_end_game_message(screen, score, fruit_collected)
 
+            # Event handling for space bar press to restart the game
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        game_over = False
+                        score = 0
+                        fruit_collected = 0
+                        snake = Snake()
+                        food = Food()
+                        start_time = pygame.time.get_ticks()
+
         else:
             elapsed_time = pygame.time.get_ticks() - start_time
             timer_text = font.render("Time: " + format_time(elapsed_time // 1000), True, (255, 255, 255))
@@ -247,16 +289,6 @@ def main(clock, FPS):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Snake CTF game with debug mode")
-    parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode")
-    args = parser.parse_args()
-
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-        logging.debug("Debug mode is enabled.")
-    else:
-        logging.basicConfig(level=logging.INFO)
-
     game_over = False
     clock = pygame.time.Clock()
     FPS = 20
