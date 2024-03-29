@@ -1,21 +1,21 @@
-import pygame, random, sys, os
-
+import pygame
+import random
+import sys
+import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 BACKGROUND_MUSIC_PATH = os.path.join(ASSETS_DIR, "lady_of_the_80's.mp3")
 GAME_OVER_MUSIC_PATH = os.path.join(ASSETS_DIR, "game-over.mp3")
 FRUIT_EATEN_SOUND_PATH = os.path.join(ASSETS_DIR, "bite.mp3")
-
+POWER_UP_DURATION = 10
 
 pygame.init()
-
 
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 700
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Snake CTF")
-
 
 snake_head_normal = pygame.image.load(os.path.join(ASSETS_DIR, "head.png"))
 snake_head_normal = pygame.transform.scale(snake_head_normal, (30, 30))
@@ -23,21 +23,19 @@ background = pygame.image.load(os.path.join(ASSETS_DIR, "background.jpg"))
 background = pygame.transform.scale(background, (SCREEN_WIDTH, SCREEN_HEIGHT))
 fruit = pygame.image.load(os.path.join(ASSETS_DIR, "burger.png"))
 fruit = pygame.transform.scale(fruit, (30, 30))
-
+powerup_image = pygame.image.load(os.path.join(ASSETS_DIR, "milkshake.png"))
+powerup_image = pygame.transform.scale(powerup_image, (30, 30))
 
 pygame.mixer.music.load(BACKGROUND_MUSIC_PATH)
 fruit_eaten_sound = pygame.mixer.Sound(FRUIT_EATEN_SOUND_PATH)
 pygame.mixer.music.set_volume(0.1)
 
-
 def play_background_music():
     pygame.mixer.music.play(-1)
-
 
 def play_game_over_music():
     pygame.mixer.music.load(GAME_OVER_MUSIC_PATH)
     pygame.mixer.music.play()
-
 
 class Snake:
     def __init__(self):
@@ -96,24 +94,44 @@ class Snake:
 
 class Food:
     def __init__(self):
-        self.position = [
-            random.randrange(1, (SCREEN_WIDTH // 10)) * 10,
-            random.randrange(1, (SCREEN_HEIGHT // 10)) * 10,
-        ]
-        self.is_food_on_screen = True
+        self.position = [0, 0]  # Initialize position
+        self.is_food_on_screen = False
 
     def spawn_food(self):
         if not self.is_food_on_screen:
-            self.position = [
-                random.randrange(1, (SCREEN_WIDTH // 10)) * 10,
-                random.randrange(1, (SCREEN_HEIGHT // 10)) * 10,
-            ]
+            # Define areas to avoid (near score and timer)
+            score_area = (SCREEN_WIDTH - 200, 0, 200, 50)  # Area around score (top right)
+            timer_area = (0, 0, 200, 50)  # Area around timer (top left)
+            avoid_areas = [score_area, timer_area]
+
+            # Generate random position until it's not in an avoid area
+            while True:
+                x = random.randrange(1, (SCREEN_WIDTH // 10)) * 10
+                y = random.randrange(1, (SCREEN_HEIGHT // 10)) * 10
+                if not any(
+                    area[0] <= x <= area[0] + area[2] and area[1] <= y <= area[1] + area[3]
+                    for area in avoid_areas
+                ):
+                    break
+
+            self.position = [x, y]
             self.is_food_on_screen = True
+
         return self.position
 
     def set_food_on_screen(self, choice):
         self.is_food_on_screen = choice
 
+
+def format_time(seconds):
+    minutes, seconds = divmod(seconds, 60)
+    return "{:02}:{:02}".format(int(minutes), int(seconds))
+
+def display_end_game_message(screen, score, fruit_collected):
+    if fruit_collected > 50:
+        font = pygame.font.SysFont("Arial", 30)
+        message = font.render(r"FLAG{EnterYourStringHere!!}", True, (0, 255, 0))
+        screen.blit(message, ((SCREEN_WIDTH - message.get_width()) // 2, 300))
 
 def main(clock, FPS):
     global game_over, snake, food, score
@@ -124,8 +142,14 @@ def main(clock, FPS):
     snake = Snake()
     food = Food()
     score = 0
+    fruit_collected = 0
 
     play_background_music()
+
+    power_up_spawned = False
+    power_up_position = [0, 0]  # Initialize power-up position
+
+    start_time = pygame.time.get_ticks()
 
     while True:
         clock.tick(FPS)
@@ -137,8 +161,10 @@ def main(clock, FPS):
                 if event.key == pygame.K_SPACE and game_over:
                     game_over = False
                     score = 0
+                    fruit_collected = 0
                     snake = Snake()
                     food = Food()
+                    start_time = pygame.time.get_ticks()
                 elif event.key == pygame.K_RIGHT:
                     snake.change_direction_to("RIGHT")
                 elif event.key == pygame.K_LEFT:
@@ -147,6 +173,20 @@ def main(clock, FPS):
                     snake.change_direction_to("UP")
                 elif event.key == pygame.K_DOWN:
                     snake.change_direction_to("DOWN")
+        
+        # Power-up spawning logic
+        if not power_up_spawned:
+            power_up_position = [
+                random.randrange(1, (SCREEN_WIDTH // 10)) * 10,
+                random.randrange(1, (SCREEN_HEIGHT // 10)) * 10,
+            ]
+            power_up_spawned = True
+
+        # Draw everything
+        screen.fill((0, 0, 0))  # Clear screen
+        
+        # Draw power-up
+        screen.blit(powerup_image, power_up_position)
 
         food_pos = food.spawn_food()
         collision_status = snake.move(food_pos)
@@ -163,6 +203,7 @@ def main(clock, FPS):
             game_over = True
         elif collision_status == 2:
             score += 1
+            fruit_collected += 1
             food.set_food_on_screen(False)
             fruit_eaten_sound.play()
 
@@ -195,7 +236,13 @@ def main(clock, FPS):
                 ((SCREEN_WIDTH - instruction_text.get_width()) // 2, 250),
             )
 
+            display_end_game_message(screen, score, fruit_collected)
+
         else:
+            elapsed_time = pygame.time.get_ticks() - start_time
+            timer_text = font.render("Time: " + format_time(elapsed_time // 1000), True, (255, 255, 255))
+            screen.blit(timer_text, (SCREEN_WIDTH - timer_text.get_width() - 10, 10))
+
             score_text = font.render("Score: " + str(score), True, (255, 255, 255))
             screen.blit(score_text, (10, 10))
 
