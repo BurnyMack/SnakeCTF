@@ -1,6 +1,8 @@
-# Snake CTF Challenge
+# Snake CTF
 
-![Snake CTF]()
+<p align="center">
+  <img src="https://github.com/BurnyMack/Snake_CTF/blob/main/assets/snake.png?raw=true" alt="Snake CTF">
+</p>
 
 ## Overview
 
