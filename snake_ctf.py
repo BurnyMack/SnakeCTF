@@ -32,12 +32,15 @@ pygame.mixer.music.load(BACKGROUND_MUSIC_PATH)
 fruit_eaten_sound = pygame.mixer.Sound(FRUIT_EATEN_SOUND_PATH)
 pygame.mixer.music.set_volume(0.1)
 
+
 def play_background_music():
     pygame.mixer.music.play(-1)
+
 
 def play_game_over_music():
     pygame.mixer.music.load(GAME_OVER_MUSIC_PATH)
     pygame.mixer.music.play()
+
 
 class Snake:
     def __init__(self):
@@ -102,7 +105,12 @@ class Food:
     def spawn_food(self):
         if not self.is_food_on_screen:
             # Define areas to avoid (near score and timer)
-            score_area = (SCREEN_WIDTH - 200, 0, 200, 50)  # Area around score (top right)
+            score_area = (
+                SCREEN_WIDTH - 200,
+                0,
+                200,
+                50,
+            )  # Area around score (top right)
             timer_area = (0, 0, 200, 50)  # Area around timer (top left)
             avoid_areas = [score_area, timer_area]
 
@@ -111,7 +119,8 @@ class Food:
                 x = random.randrange(1, (SCREEN_WIDTH // 10)) * 10
                 y = random.randrange(1, (SCREEN_HEIGHT // 10)) * 10
                 if not any(
-                    area[0] <= x <= area[0] + area[2] and area[1] <= y <= area[1] + area[3]
+                    area[0] <= x <= area[0] + area[2]
+                    and area[1] <= y <= area[1] + area[3]
                     for area in avoid_areas
                 ):
                     break
@@ -129,11 +138,13 @@ def format_time(seconds):
     minutes, seconds = divmod(seconds, 60)
     return "{:02}:{:02}".format(int(minutes), int(seconds))
 
+
 def display_end_game_message(screen, score, fruit_collected):
     if fruit_collected > 50:
         font = pygame.font.SysFont("Arial", 30)
         message = font.render(r"FLAG{EnterYourStringHere!!}", True, (0, 255, 0))
         screen.blit(message, ((SCREEN_WIDTH - message.get_width()) // 2, 300))
+
 
 def main(clock, FPS):
     global game_over, snake, food, score
@@ -155,14 +166,14 @@ def main(clock, FPS):
 
     # Display start menu
     screen.fill((0, 0, 0))
-    screen.blit(start_menu_image, ((SCREEN_WIDTH - start_menu_image.get_width()) // 2, 150))
+    screen.blit(
+        start_menu_image, ((SCREEN_WIDTH - start_menu_image.get_width()) // 2, 150)
+    )
     game_title_text = large_font.render("Snake CTF", True, (255, 255, 255))
     screen.blit(
         game_title_text, ((SCREEN_WIDTH - game_title_text.get_width()) // 2, 50)
     )
-    instruction_text = font.render(
-        "Press Space Bar to Play", True, (255, 255, 255)
-    )
+    instruction_text = font.render("Press Space Bar to Play", True, (255, 255, 255))
     screen.blit(
         instruction_text,
         ((SCREEN_WIDTH - instruction_text.get_width()) // 2, 450),
@@ -200,7 +211,7 @@ def main(clock, FPS):
                     snake.change_direction_to("UP")
                 elif event.key == pygame.K_DOWN:
                     snake.change_direction_to("DOWN")
-        
+
         # Power-up spawning logic
         if not power_up_spawned:
             power_up_position = [
@@ -211,7 +222,7 @@ def main(clock, FPS):
 
         # Draw everything
         screen.fill((0, 0, 0))  # Clear screen
-        
+
         # Draw power-up
         screen.blit(powerup_image, power_up_position)
 
@@ -278,7 +289,9 @@ def main(clock, FPS):
 
         else:
             elapsed_time = pygame.time.get_ticks() - start_time
-            timer_text = font.render("Time: " + format_time(elapsed_time // 1000), True, (255, 255, 255))
+            timer_text = font.render(
+                "Time: " + format_time(elapsed_time // 1000), True, (255, 255, 255)
+            )
             screen.blit(timer_text, (SCREEN_WIDTH - timer_text.get_width() - 10, 10))
 
             score_text = font.render("Score: " + str(score), True, (255, 255, 255))
