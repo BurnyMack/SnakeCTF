@@ -1,7 +1,7 @@
 # Snake CTF
 
 <p align="center">
-  <img src="https://github.com/BurnyMack/Snake_CTF/blob/main/assets/snake.png?raw=true" alt="Snake CTF">
+  <img src="https://github.com/BurnyMack/snake-ctf/blob/main/assets/snake.png?raw=true" alt="Snake CTF">
 </p>
 
 ## Overview
@@ -20,7 +20,7 @@ Welcome to Snake CTF Challenge! This project is a Python-based implementation of
 To run the Snake CTF Challenge on your local machine, follow these steps:
 
 1. **Clone the Repository**:
-   git clone https://github.com/BurnyMack/Snake_CTF.git
+   git clone https://github.com/BurnyMack/snake-ctf.git
 2. **Install Dependencies**:
    pip install -r requirements.txt   
 3. **Run the Game**:
